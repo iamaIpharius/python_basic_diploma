@@ -1,10 +1,9 @@
 import telebot
 import requests
+from decouple import config
+TOKEN = config('TOKEN')
 
-with open('token.txt', 'r') as file:
-    my_token = file.readline()
-
-bot = telebot.TeleBot(my_token)
+bot = telebot.TeleBot(TOKEN)
 
 
 @bot.message_handler(commands=['start'])
@@ -19,7 +18,7 @@ def send_welcome(message):
 
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
-    if 'прив' in message.text.lower():
+    if 'привет' in message.text.lower():
 
         bot.send_message(message.from_user.id,
                          "Привет, тебя приветствует бот компании Too Easy Travel! Чем я могу помочь?")
