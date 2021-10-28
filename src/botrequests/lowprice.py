@@ -1,6 +1,8 @@
 import requests
 import json
+
 api_key = "149073f1c0mshd8a1e0d0781eab1p12a20ajsn866b16271dc0"
+
 
 def get_destination_id(destination):
     url = "https://hotels4.p.rapidapi.com/locations/search"
@@ -18,8 +20,8 @@ def get_destination_id(destination):
 
 
 def hotels_list_by_lowprice(destination, hotels_count, checkIn, checkOut):
-    if hotels_count > 25:
-        hotels_count = 25
+    if int(hotels_count) > 25:
+        hotels_count = "25"
     url = "https://hotels4.p.rapidapi.com/properties/list"
 
     querystring = {"destinationId": str(destination), "pageNumber": "1", "pageSize": str(hotels_count),
@@ -34,6 +36,7 @@ def hotels_list_by_lowprice(destination, hotels_count, checkIn, checkOut):
     response = requests.request("GET", url, headers=headers, params=querystring)
     result = json.loads(response.text)
     hotels_list = result["data"]["body"]["searchResults"]["results"]
+
     return hotels_list
 
 
@@ -51,3 +54,15 @@ def get_photos(hotel_id):
     result = json.loads(response.text)
     photos_list = [x["baseUrl"] for x in result['hotelImages']]
     return photos_list
+
+
+def form_result_string(hotel):
+    result = f"""
+  Название отеля: {hotel['name']}
+  Адрес: {hotel['address']['locality']}, {hotel['address']['streetAddress']}, {hotel['address']['postalCode']}
+  Расстояние до {hotel['landmarks'][0]["label"]} - {hotel['landmarks'][0]["distance"]}
+  Цена: {hotel['ratePlan']['price']['current']}
+  """
+    return result
+
+
