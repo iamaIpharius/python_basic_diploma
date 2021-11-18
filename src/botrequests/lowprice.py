@@ -1,7 +1,8 @@
 import requests
 import json
+from decouple import config
 
-api_key = "149073f1c0mshd8a1e0d0781eab1p12a20ajsn866b16271dc0"
+api_key = config("api_key")
 
 
 def get_destination_id(destination):

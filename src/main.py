@@ -1,7 +1,7 @@
 import telebot
 from decouple import config
 from telebot.types import InputMediaPhoto
-
+from database import database as db
 from botrequests import lowprice
 import sqlite3
 
@@ -13,30 +13,9 @@ conn = sqlite3.connect('history.db', check_same_thread=False)
 c = conn.cursor()
 
 
-def insert_row(value):
-    user = 'user' + str(value.from_user.id)
-    c.execute(f"INSERT INTO {user} VALUES ('{value.text}', '*', '*', '*', '*', '*')")
-    conn.commit()
-
-
-def update_db(value, column):
-    user = 'user' + str(value.from_user.id)
-    c.execute(f"""UPDATE {user} SET {column} = "{str(value.text)}" WHERE rowid = (SELECT MAX(rowid) FROM {user})""")
-    conn.commit()
-
-
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    user = 'user' + str(message.from_user.id)
-    c.execute(f"""CREATE TABLE IF NOT EXISTS {user} (
-    command text,
-    city text,
-    hotels_count text,
-    check_in text,
-    check_out text,
-    photos text
-    )""")
-    conn.commit()
+    db.create_table_if_not_exists(message, c, conn)
     bot.reply_to(message, "( ͡° ͜ʖ ͡°)")
 
 
@@ -47,48 +26,43 @@ def send_welcome(message):
 
 @bot.message_handler(commands=['lowprice'])
 def lowprice_start(message):
-    insert_row(message)
+    db.insert_row(message, c, conn)
 
     bot.send_message(message.from_user.id, 'Куда едем, командир? ')
     bot.register_next_step_handler(message, where_we_going)
 
 
 def where_we_going(message):
-    update_db(message, 'city')
-
+    db.update_db(message, 'city', c, conn)
 
     bot.send_message(message.from_user.id, 'Сколько отелей нужно вывести в поиске? ')
     bot.register_next_step_handler(message, how_many_hotels)
 
 
 def how_many_hotels(message):
-    update_db(message, 'hotels_count')
-    user = 'user' + str(message.from_user.id)
+    db.update_db(message, 'hotels_count', c, conn)
+    # user = 'user' + str(message.from_user.id)
     bot.send_message(message.from_user.id, 'Дата заезда в формате yyyy-MM-dd: ')
     bot.register_next_step_handler(message, set_check_in)
 
 
 def set_check_in(message):
-    update_db(message, 'check_in')
+    db.update_db(message, 'check_in', c, conn)
     bot.send_message(message.from_user.id, 'Дата выезда в формате yyyy-MM-dd: ')
     bot.register_next_step_handler(message, set_check_out)
 
 
 def set_check_out(message):
-    update_db(message, 'check_out')
+    db.update_db(message, 'check_out', c, conn)
     bot.send_message(message.from_user.id, 'Нужны ли фотографии? (да/нет) ')
     bot.register_next_step_handler(message, need_photos)
 
 
 def need_photos(message):
-    update_db(message, 'photos')
+    db.update_db(message, 'photos', c, conn)
     bot.send_message(message.from_user.id, 'ОБРАБАТЫВАЮ...')
 
-    user = 'user' + str(message.from_user.id)
-    c.execute(f"SELECT * FROM {user}")
-    table = c.fetchall()
-    work_row = table[-1]
-    print(work_row)
+    work_row = db.fetch_db(message, c)
 
     if message.text.lower() == "да":
         bot.send_message(message.from_user.id, 'ИЩУ ФОТО...')
