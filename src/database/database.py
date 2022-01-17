@@ -1,6 +1,10 @@
 import sqlite3
 
 
+def connect_to_db(db):
+    return sqlite3.connect(db, check_same_thread=False)
+
+
 def create_table_if_not_exists(value, cursor, connection):
     user = 'user' + str(value.from_user.id)
     cursor.execute(f"""CREATE TABLE IF NOT EXISTS {user} (

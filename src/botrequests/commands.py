@@ -20,15 +20,19 @@ def get_destination_id(destination):
     return result['suggestions'][0]['entities'][0]['destinationId']
 
 
-def hotels_list_by_lowprice(destination, hotels_count, checkIn, checkOut):
+def hotels_list_by(destination, hotels_count, checkIn, checkOut, sort_by):
+    if sort_by == "/lowprice":
+        sort_by = "PRICE"
+    elif sort_by == "/highprice":
+        sort_by = "PRICE_HIGHEST_FIRST"
     if int(hotels_count) > 25:
         hotels_count = "25"
     url = "https://hotels4.p.rapidapi.com/properties/list"
 
     querystring = {"destinationId": str(destination), "pageNumber": "1", "pageSize": str(hotels_count),
-                   "checkIn": checkIn, "checkOut": checkOut, "adults1": "1", "sortOrder": "PRICE", "locale": "ru_RU",
+                   "checkIn": checkIn, "checkOut": checkOut, "adults1": "1", "sortOrder": sort_by, "locale": "ru_RU",
                    "currency": "USD"}
-
+    print(querystring)
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
         'x-rapidapi-key': api_key
