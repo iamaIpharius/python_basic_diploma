@@ -5,6 +5,10 @@ from decouple import config
 api_key = config("api_key")
 
 
+def best_deal_sort(hotel):
+    return hotel['ratePlan']['price']['exactCurrent']
+
+
 def get_destination_id(destination):
     url = "https://hotels4.p.rapidapi.com/locations/search"
 
@@ -21,10 +25,21 @@ def get_destination_id(destination):
 
 
 def hotels_list_by(destination, hotels_count, checkIn, checkOut, sort_by):
+    hotels_to_result = int(hotels_count)
     if sort_by == "/lowprice":
         sort_by = "PRICE"
     elif sort_by == "/highprice":
         sort_by = "PRICE_HIGHEST_FIRST"
+    elif sort_by == "/bestdeal":
+
+        sort_by = "DISTANCE_FROM_LANDMARK"
+        hotels_count = "25"
+    else:
+        print("ERROR")
+        return
+
+    print(hotels_to_result)
+
     if int(hotels_count) > 25:
         hotels_count = "25"
     url = "https://hotels4.p.rapidapi.com/properties/list"
@@ -41,8 +56,16 @@ def hotels_list_by(destination, hotels_count, checkIn, checkOut, sort_by):
     response = requests.request("GET", url, headers=headers, params=querystring)
     result = json.loads(response.text)
     hotels_list = result["data"]["body"]["searchResults"]["results"]
+    if sort_by == "DISTANCE_FROM_LANDMARK":
 
-    return hotels_list
+        sorted_list = sorted(hotels_list, key=best_deal_sort)
+        result = []
+        for index in range(hotels_to_result):
+            result.append(sorted_list[index])
+
+        return result
+    else:
+        return hotels_list
 
 
 def get_photos(hotel_id):
@@ -69,5 +92,3 @@ def form_result_string(hotel):
   Цена: {hotel['ratePlan']['price']['current']}
   """
     return result
-
-

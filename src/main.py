@@ -43,6 +43,13 @@ def highprice_start(message):
     bot.send_message(message.from_user.id, 'Куда едем, командир? ')
     bot.register_next_step_handler(message, where_we_going)
 
+@bot.message_handler(commands=['bestdeal'])
+def bestdeal_start(message):
+    db.insert_row(message, c, conn)
+
+    bot.send_message(message.from_user.id, 'Куда едем, командир? ')
+    bot.register_next_step_handler(message, where_we_going)
+
 
 def where_we_going(message):
     db.update_db(message, 'city', c, conn)
