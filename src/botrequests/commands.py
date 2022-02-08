@@ -92,3 +92,22 @@ def form_result_string(hotel):
   Цена: {hotel['ratePlan']['price']['current']}
   """
     return result
+
+
+def form_history(history_list):
+    result = f"""
+          История запросов:\n
+          """
+    for item in history_list:
+        # if item[0] == "lowprice":
+        history_string = f"Тип: {item[0]} Город: {item[1]} Дата заезда: {item[3]} Дата выезда: {item[4]}\n"
+        result += history_string
+        # elif item[0] == "highprice":
+        #     history_string = f"Тип: Высокая цена Город: {item[1]} Дата заезда: {item[3]} Дата выезда: {item[4]}\n"
+        #     result += history_string
+        # elif item[0] == "bestdeal":
+        #     history_string = f"Тип: Лучший выбор Город: {item[1]} Дата заезда: {item[3]} Дата выезда: {item[4]}\n"
+        #     result += history_string
+
+
+    return result

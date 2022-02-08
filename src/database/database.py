@@ -38,3 +38,10 @@ def fetch_db(value, cursor):
     work_row = table[-1]
     print(work_row)
     return work_row
+
+
+def fetch_all_db(value, cursor):
+    user = 'user' + str(value.from_user.id)
+    cursor.execute(f"SELECT * FROM {user}")
+    table = cursor.fetchall()
+    return table

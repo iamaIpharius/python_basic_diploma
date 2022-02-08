@@ -50,6 +50,13 @@ def bestdeal_start(message):
     bot.send_message(message.from_user.id, 'Куда едем, командир? ')
     bot.register_next_step_handler(message, where_we_going)
 
+@bot.message_handler(commands=['history'])
+def bestdeal_start(message):
+    history_table = db.fetch_all_db(message, c)
+    history = commands.form_history(history_table)
+    bot.send_message(message.from_user.id, 'Ваша история запросов: ')
+    bot.send_message(message.from_user.id, history)
+
 
 def where_we_going(message):
     db.update_db(message, 'city', c, conn)
