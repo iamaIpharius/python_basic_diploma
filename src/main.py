@@ -15,7 +15,14 @@ c = conn.cursor()
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     db.create_table_if_not_exists(message, c, conn)
-    bot.reply_to(message, "( ͡° ͜ʖ ͡°)")
+    bot.reply_to(message, """
+    Привет! Это бот для поиска отелей!
+    Для управления мной есть такие команды:
+    /lowprice - показать отели с самыми низкими ценами
+    /highprice - показать самые дороги отели в городе
+    /bestdeal - лучшее соотношение цены и близости к центру
+    /history - история поиска отелей
+    """)
 
 
 @bot.message_handler(commands=['help'])
