@@ -43,6 +43,7 @@ def lowprice_start(message):
     bot.send_message(message.from_user.id, 'Куда едем, командир? ')
     bot.register_next_step_handler(message, where_we_going)
 
+
 @bot.message_handler(commands=['highprice'])
 def highprice_start(message):
     db.insert_row(message, c, conn)
@@ -50,12 +51,14 @@ def highprice_start(message):
     bot.send_message(message.from_user.id, 'Куда едем, командир? ')
     bot.register_next_step_handler(message, where_we_going)
 
+
 @bot.message_handler(commands=['bestdeal'])
 def bestdeal_start(message):
     db.insert_row(message, c, conn)
 
     bot.send_message(message.from_user.id, 'Куда едем, командир? ')
     bot.register_next_step_handler(message, where_we_going)
+
 
 @bot.message_handler(commands=['history'])
 def bestdeal_start(message):
@@ -94,31 +97,43 @@ def set_check_out(message):
 
 
 def need_photos(message):
-    db.update_db(message, 'photos', c, conn)
-
-    bot.send_message(message.from_user.id, 'ОБРАБАТЫВАЮ...')
-
-    work_row = db.fetch_db(message, c)
-
     if message.text.lower() == "да":
-        bot.send_message(message.from_user.id, 'ИЩУ ФОТО...')
-        dest_id = commands.get_destination_id(work_row[1])
-        current_hotels_list = commands.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
-        for hotel in current_hotels_list:
-            info_about_hotel = commands.form_result_string(hotel)
-            current_photos_list = commands.get_photos(hotel['id'])
-            current_photos_list = [x.format(size='b') for x in current_photos_list]
-            media_array = [InputMediaPhoto(x) for x in current_photos_list[:9]]
-            media_array[0].caption = info_about_hotel
-            bot.send_media_group(message.from_user.id, media_array)
+        bot.send_message(message.from_user.id, 'Сколько фотографий? ')
+        bot.register_next_step_handler(message, how_many_photos)
+
+
 
     else:
+        db.update_db(message, 'photos', c, conn)
+
+        bot.send_message(message.from_user.id, 'ОБРАБАТЫВАЮ...')
+
+        work_row = db.fetch_db(message, c)
+
         bot.send_message(message.from_user.id, 'ПОДОЖДИТЕ...')
         dest_id = commands.get_destination_id(work_row[1])
         current_hotels_list = commands.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
         for hotel in current_hotels_list:
             info_about_hotel = commands.form_result_string(hotel)
             bot.send_message(message.from_user.id, info_about_hotel)
+
+
+def how_many_photos(message):
+    db.update_db(message, 'photos', c, conn)
+    bot.send_message(message.from_user.id, 'ОБРАБАТЫВАЮ...')
+
+    work_row = db.fetch_db(message, c)
+
+    bot.send_message(message.from_user.id, 'ИЩУ ФОТО...')
+    dest_id = commands.get_destination_id(work_row[1])
+    current_hotels_list = commands.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
+    for hotel in current_hotels_list:
+        info_about_hotel = commands.form_result_string(hotel)
+        current_photos_list = commands.get_photos(hotel['id'])
+        current_photos_list = [x.format(size='b') for x in current_photos_list]
+        media_array = [InputMediaPhoto(x) for x in current_photos_list[:int(message.text)]]
+        media_array[0].caption = info_about_hotel
+        bot.send_media_group(message.from_user.id, media_array)
 
 
 @bot.message_handler(content_types=['text'])
