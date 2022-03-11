@@ -6,7 +6,7 @@ def connect_to_db(db):
 
 
 def create_table_if_not_exists(value, cursor, connection):
-    user = 'user' + str(value.from_user.id)
+    user = 'user' + str(value.chat.id)
     cursor.execute(f"""CREATE TABLE IF NOT EXISTS {user} (
         command text,
         city text,
@@ -19,20 +19,21 @@ def create_table_if_not_exists(value, cursor, connection):
 
 
 def insert_row(value, cursor, connection):
-    user = 'user' + str(value.from_user.id)
+    user = 'user' + str(value.chat.id)
     cursor.execute(f"INSERT INTO {user} VALUES ('{value.text}', '*', '*', '*', '*', '*')")
     connection.commit()
 
 
 def update_db(value, column, cursor, connection):
-    user = 'user' + str(value.from_user.id)
+    user = 'user' + str(value.chat.id)
+    print(user)
     cursor.execute(
         f"""UPDATE {user} SET {column} = "{str(value.text)}" WHERE rowid = (SELECT MAX(rowid) FROM {user})""")
     connection.commit()
 
 
 def fetch_db(value, cursor):
-    user = 'user' + str(value.from_user.id)
+    user = 'user' + str(value.chat.id)
     cursor.execute(f"SELECT * FROM {user}")
     table = cursor.fetchall()
     work_row = table[-1]
@@ -41,7 +42,7 @@ def fetch_db(value, cursor):
 
 
 def fetch_all_db(value, cursor):
-    user = 'user' + str(value.from_user.id)
+    user = 'user' + str(value.chat.id)
     cursor.execute(f"SELECT * FROM {user}")
     table = cursor.fetchall()
     return table
