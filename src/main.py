@@ -4,17 +4,27 @@ from telebot.types import InputMediaPhoto
 from database import database as db
 from botrequests import commands
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
+import datetime
+from telebot import types
 
 TOKEN = config('TOKEN')
 
 bot = telebot.TeleBot(TOKEN)
 
-conn = db.connect_to_db('history.db')
-c = conn.cursor()
+conn = db.connect_to_db('history.db') #соединение с базой данных
+c = conn.cursor() #подключение курсора для управлениея базой данных
+
+
 
 
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
+def send_welcome(message: types.Message):
+    """
+    Приветственное сообщение, ответ на команду start
+    Создается таблица базы данных
+    :param message:
+    :return:
+    """
     db.create_table_if_not_exists(message, c, conn)
     bot.reply_to(message, """
     Привет! Это бот для поиска отелей!
@@ -27,7 +37,12 @@ def send_welcome(message):
 
 
 @bot.message_handler(commands=['help'])
-def send_welcome(message):
+def send_welcome(message: types.Message):
+    """
+    Ответ на команду help с перечнем команд для управления ботом
+    :param message:
+    :return:
+    """
     bot.reply_to(message, """
     Для управления мной есть такие команды:
     /lowprice - показать отели с самыми низкими ценами
@@ -38,7 +53,15 @@ def send_welcome(message):
 
 
 @bot.message_handler(commands=['lowprice'])
-def lowprice_start(message):
+def lowprice_start(message: types.Message):
+    """
+    Команда lowprice, запускает цепочку вопрос дял поиска отелей по самой низкой цене
+    в таблицу базы данных добавляется новая строка строка (весь запрос), которая будет дополняться
+
+    бут задает вопрос и ответ пользователя передается в следующую по цепочке функцию и там регистрируется
+    :param message:
+    :return:
+    """
     db.insert_row(message, c, conn)
 
     bot.send_message(message.chat.id, 'Куда едем, командир? ')
@@ -46,7 +69,15 @@ def lowprice_start(message):
 
 
 @bot.message_handler(commands=['highprice'])
-def highprice_start(message):
+def highprice_start(message: types.Message):
+    """
+    Команда highprice, запускает цепочку вопрос дял поиска отелей по самой высокой цене
+    в таблицу базы данных добавляется новая строка строка (весь запрос), которая будет дополняться
+
+    бут задает вопрос и ответ пользователя передается в следующую по цепочке функцию и там регистрируется
+    :param message:
+    :return:
+    """
     db.insert_row(message, c, conn)
 
     bot.send_message(message.chat.id, 'Куда едем, командир? ')
@@ -54,7 +85,15 @@ def highprice_start(message):
 
 
 @bot.message_handler(commands=['bestdeal'])
-def bestdeal_start(message):
+def bestdeal_start(message: types.Message):
+    """
+    Команда bestdeal, запускает цепочку вопрос дял поиска отелей по цены и расстояния до центра
+    в таблицу базы данных добавляется новая строка строка (весь запрос), которая будет дополняться
+
+    бут задает вопрос и ответ пользователя передается в следующую по цепочке функцию и там регистрируется
+    :param message:
+    :return:
+    """
     db.insert_row(message, c, conn)
 
     bot.send_message(message.chat.id, 'Куда едем, командир? ')
@@ -62,83 +101,143 @@ def bestdeal_start(message):
 
 
 @bot.message_handler(commands=['history'])
-def bestdeal_start(message):
+def bestdeal_start(message: types.Message):
+    """
+    Из базы данных выгружается сырая информация в переменную history_table и затем с помощью функции form_history
+    обрабатывается и затем из таблицы выводится история запросов (строк)
+    :param message:
+    :return:
+    """
     history_table = db.fetch_all_db(message, c)
     history = commands.form_history(history_table)
     bot.send_message(message.chat.id, 'Ваша история запросов: ')
     bot.send_message(message.chat.id, history)
 
 
-def where_we_going(message):
+def where_we_going(message: types.Message):
+    """
+    второй шаг в цепочке, сюда поступает информация о городе назначения и добавляется в строку таблицы
+    Далее пользователю предлагают ответить на следующий вопрос и вызывается следующая по цепочке функция
+    :param message:
+    :return:
+    """
     db.update_db(message, 'city', c, conn)
 
     bot.send_message(message.chat.id, 'Сколько отелей нужно вывести в поиске? ')
     bot.register_next_step_handler(message, how_many_hotels)
 
 
-def how_many_hotels(message):
+def how_many_hotels(message: types.Message):
+    """
+    Следующий шаг, сбда поступает информация о количестве отелей, которые нужно вывести, и добавляется в строку таблицы.
+    Далее задействуется модуль Календарь,  функция вызова даты въезда
+
+    :param message:
+    :return:
+    """
     db.update_db(message, 'hotels_count', c, conn)
-    calendar, step = DetailedTelegramCalendar().build()
-    bot.send_message(message.chat.id, 'Выберете дату заезда: ')
-    bot.send_message(message.chat.id,
-                     f"Select {LSTEP[step]}",
-                     reply_markup=calendar)
+    text = "Выберите дату заезда"
+    bot.send_message(message.from_user.id, text)
+    date = datetime.date.today()
+    calendar, step = DetailedTelegramCalendar(calendar_id=1, locale='ru', min_date=date).build()
+    bot.send_message(message.chat.id, f"Выберите {LSTEP[step]}", reply_markup=calendar)
     # bot.send_message(message.chat.id, 'Дата заезда в формате yyyy-MM-dd: ')
     # bot.register_next_step_handler(message, set_check_in)
 
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func())
-def cal(call):
-    result, key, step = DetailedTelegramCalendar().process(call.data)
+def cal(call: types.CallbackQuery) -> None:
+    """
+    Функция обработчик календаря, выводит клавиатуру с календарем и ожидает ответ,
+    передает ответ в БД,
+    и переходит к следующему шагу
+    :param call:запрос обраатного вызова с сообщением
+    :return:
+    """
+    date = datetime.date.today()
+    result, key, step = DetailedTelegramCalendar(calendar_id=1, locale='ru', min_date=date).process(call.data)
     if not result and key:
-        bot.edit_message_text(f"Select {LSTEP[step]}",
+        bot.edit_message_text(f"Выберите {LSTEP[step]}",
                               call.message.chat.id,
                               call.message.message_id,
                               reply_markup=key)
     elif result:
-        bot.edit_message_text(f"You selected {result}",
+        bot.edit_message_text(f"Вы выбрали {result}",
                               call.message.chat.id,
                               call.message.message_id)
         call.message.text = str(result)
+        db.update_db(call.message, 'check_in', c, conn)
         # bot.send_message(call.message.chat.id, call.message.text)
-        set_check_in(call.message)
+
+        set_check_in(call.message.chat.id)
 
 
-def set_check_in(message):
-    db.update_db(message, 'check_in', c, conn)
-    calendar, step = DetailedTelegramCalendar().build()
-    bot.send_message(message.chat.id, 'Выберете дату выезда: ')
-    bot.send_message(message.chat.id,
-                     f"Select {LSTEP[step]}",
-                     reply_markup=calendar)
+
+def set_check_in(chat_id: int) -> None:
+    """
+    Функция вызова даты выезда
+    :param chat_id: ID чата
+    :return:
+    """
+    date_today = datetime.date.today()
+    text = "Выберите дату выезда"
+    bot.send_message(chat_id, text)
+    calendar, step = DetailedTelegramCalendar(calendar_id=2, locale='ru', min_date=date_today).build()
+    bot.send_message(chat_id, f"Выберите {LSTEP[step]}", reply_markup=calendar)
     # bot.send_message(message.chat.id, 'Дата выезда в формате yyyy-MM-dd: ')
     # bot.register_next_step_handler(message, set_check_out)
 
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func())
-def cal(call):
-    result, key, step = DetailedTelegramCalendar().process(call.data)
+def cal(call: types.CallbackQuery) -> None:
+    """
+    Функция обработчик календаря, выводит клавиатуру с календарем и ожидает ответ,
+    передает ответ в БД,
+    и переходит к следующему шагу
+    :param call:запрос обратного вызова с сообщением
+    """
+    date_today = datetime.date.today()
+
+    result, key, step = DetailedTelegramCalendar(calendar_id=2, locale='ru',
+                                                 min_date=date_today).process(call.data)
     if not result and key:
-        bot.edit_message_text(f"Select {LSTEP[step]}",
+        bot.edit_message_text(f"Выберите {LSTEP[step]}",
                               call.message.chat.id,
                               call.message.message_id,
                               reply_markup=key)
     elif result:
-        bot.edit_message_text(f"You selected {result}",
+        bot.edit_message_text(f"Вы выбрали {result}",
                               call.message.chat.id,
                               call.message.message_id)
         call.message.text = str(result)
+        db.update_db(call.message, 'check_out', c, conn)
         # bot.register_next_step_handler(call.message, set_check_out)
+
         set_check_out(call.message)
 
-def set_check_out(message):
-    db.update_db(message, 'check_out', c, conn)
 
+
+def set_check_out(message: types.Message):
+    """
+    Регистрируется следующий шаг в зависимости от ответа пользователя
+    :param message: сообщение от пользователя
+    :return:
+    """
     bot.send_message(message.chat.id, 'Нужны ли фотографии? (да/нет) ')
     bot.register_next_step_handler(message, need_photos)
 
 
-def need_photos(message):
+def need_photos(message: types.Message):
+    """
+    Регистрируется следующий шаг в зависимости от ответа пользователя
+    если фото нужны - регистрируется дополнительный переход к функции how_many_photos
+
+    если нет - строка бд обновляется и из строки базы данных формируется work_row, из которой в свою очередь извлекаются
+    параметры для запроса в API и формирования итогового списка отелей
+    Отели из списка по очереди направляются пользователю
+    :param message: сообщение от пользователя
+    :return:
+    """
     if message.text.lower() == "да":
         bot.send_message(message.chat.id, 'Сколько фотографий? ')
         bot.register_next_step_handler(message, how_many_photos)
@@ -160,7 +259,16 @@ def need_photos(message):
             bot.send_message(message.chat.id, info_about_hotel)
 
 
-def how_many_photos(message):
+def how_many_photos(message: types.Message):
+    """
+    Вызывается если нужны фоторафии
+    Строка БД дополняется количетсвом фотографий
+    строка бд обновляется и из строки базы данных формируется work_row, из которой в свою очередь извлекаются
+    параметры для запроса в API и формирования итогового списка отелей
+    Отели из списка по очереди направляются пользователю
+    :param message:
+    :return:
+    """
     db.update_db(message, 'photos', c, conn)
     bot.send_message(message.chat.id, 'ОБРАБАТЫВАЮ...')
 
@@ -179,7 +287,12 @@ def how_many_photos(message):
 
 
 @bot.message_handler(content_types=['text'])
-def get_text_messages(message):
+def get_text_messages(message: types.Message):
+    """
+    Вызывается если пользовательский текст не подпадает под комманды или ответы
+    :param message:
+    :return:
+    """
     if 'привет' in message.text.lower():
 
         bot.send_message(message.chat.id,
