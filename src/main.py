@@ -11,10 +11,8 @@ TOKEN = config('TOKEN')
 
 bot = telebot.TeleBot(TOKEN)
 
-conn = db.connect_to_db('history.db') #соединение с базой данных
-c = conn.cursor() #подключение курсора для управлениея базой данных
-
-
+conn = db.connect_to_db('history.db')  # соединение с базой данных
+c = conn.cursor()  # подключение курсора для управлениея базой данных
 
 
 @bot.message_handler(commands=['start'])
@@ -96,8 +94,8 @@ def bestdeal_start(message: types.Message):
     """
     db.insert_row(message, c, conn)
 
-    bot.send_message(message.chat.id, 'Куда едем, командир? ')
-    bot.register_next_step_handler(message, where_we_going)
+    mes = bot.send_message(message.chat.id, 'Куда едем, командир? ')
+    bot.register_next_step_handler(mes, where_we_going)
 
 
 @bot.message_handler(commands=['history'])
@@ -123,8 +121,8 @@ def where_we_going(message: types.Message):
     """
     db.update_db(message, 'city', c, conn)
 
-    bot.send_message(message.chat.id, 'Сколько отелей нужно вывести в поиске? ')
-    bot.register_next_step_handler(message, how_many_hotels)
+    mes = bot.send_message(message.chat.id, 'Сколько отелей нужно вывести в поиске? ')
+    bot.register_next_step_handler(mes, how_many_hotels)
 
 
 def how_many_hotels(message: types.Message):
@@ -145,7 +143,7 @@ def how_many_hotels(message: types.Message):
     # bot.register_next_step_handler(message, set_check_in)
 
 
-@bot.callback_query_handler(func=DetailedTelegramCalendar.func())
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
 def cal(call: types.CallbackQuery) -> None:
     """
     Функция обработчик календаря, выводит клавиатуру с календарем и ожидает ответ,
@@ -172,7 +170,6 @@ def cal(call: types.CallbackQuery) -> None:
         set_check_in(call.message.chat.id)
 
 
-
 def set_check_in(chat_id: int) -> None:
     """
     Функция вызова даты выезда
@@ -188,7 +185,7 @@ def set_check_in(chat_id: int) -> None:
     # bot.register_next_step_handler(message, set_check_out)
 
 
-@bot.callback_query_handler(func=DetailedTelegramCalendar.func())
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))
 def cal(call: types.CallbackQuery) -> None:
     """
     Функция обработчик календаря, выводит клавиатуру с календарем и ожидает ответ,
@@ -216,15 +213,14 @@ def cal(call: types.CallbackQuery) -> None:
         set_check_out(call.message)
 
 
-
 def set_check_out(message: types.Message):
     """
     Регистрируется следующий шаг в зависимости от ответа пользователя
     :param message: сообщение от пользователя
     :return:
     """
-    bot.send_message(message.chat.id, 'Нужны ли фотографии? (да/нет) ')
-    bot.register_next_step_handler(message, need_photos)
+    mes = bot.send_message(message.chat.id, 'Нужны ли фотографии? (да/нет) ')
+    bot.register_next_step_handler(mes, need_photos)
 
 
 def need_photos(message: types.Message):
@@ -239,8 +235,8 @@ def need_photos(message: types.Message):
     :return:
     """
     if message.text.lower() == "да":
-        bot.send_message(message.chat.id, 'Сколько фотографий? ')
-        bot.register_next_step_handler(message, how_many_photos)
+        mes = bot.send_message(message.chat.id, 'Сколько фотографий? ')
+        bot.register_next_step_handler(mes, how_many_photos)
 
 
 
