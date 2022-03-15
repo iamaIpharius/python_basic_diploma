@@ -62,8 +62,8 @@ def lowprice_start(message: types.Message):
     """
     db.insert_row(message, c, conn)
 
-    bot.send_message(message.chat.id, 'Куда едем, командир? ')
-    bot.register_next_step_handler(message, where_we_going)
+    mes = bot.send_message(message.chat.id, 'Куда едем, командир? ')
+    bot.register_next_step_handler(mes, where_we_going)
 
 
 @bot.message_handler(commands=['highprice'])
@@ -78,8 +78,8 @@ def highprice_start(message: types.Message):
     """
     db.insert_row(message, c, conn)
 
-    bot.send_message(message.chat.id, 'Куда едем, командир? ')
-    bot.register_next_step_handler(message, where_we_going)
+    mes = bot.send_message(message.chat.id, 'Куда едем, командир? ')
+    bot.register_next_step_handler(mes, where_we_going)
 
 
 @bot.message_handler(commands=['bestdeal'])
