@@ -34,11 +34,6 @@ def hotels_list_by(destination, hotels_count, checkIn, checkOut, sort_by):
 
         sort_by = "DISTANCE_FROM_LANDMARK"
         hotels_count = "25"
-    else:
-        print("ERROR")
-        return
-
-    print(hotels_to_result)
 
     if int(hotels_count) > 25:
         hotels_count = "25"
@@ -47,7 +42,6 @@ def hotels_list_by(destination, hotels_count, checkIn, checkOut, sort_by):
     querystring = {"destinationId": str(destination), "pageNumber": "1", "pageSize": str(hotels_count),
                    "checkIn": checkIn, "checkOut": checkOut, "adults1": "1", "sortOrder": sort_by, "locale": "ru_RU",
                    "currency": "USD"}
-    print(querystring)
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
         'x-rapidapi-key': api_key

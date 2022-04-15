@@ -26,7 +26,6 @@ def insert_row(value, cursor, connection):
 
 def update_db(value, column, cursor, connection):
     user = 'user' + str(value.chat.id)
-    print(user)
     cursor.execute(
         f"""UPDATE {user} SET {column} = "{str(value.text)}" WHERE rowid = (SELECT MAX(rowid) FROM {user})""")
     connection.commit()
@@ -37,7 +36,6 @@ def fetch_db(value, cursor):
     cursor.execute(f"SELECT * FROM {user}")
     table = cursor.fetchall()
     work_row = table[-1]
-    print(work_row)
     return work_row
 
 

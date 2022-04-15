@@ -6,6 +6,7 @@ from botrequests import commands
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 import datetime
 from telebot import types
+from logmodule import log
 
 TOKEN = config('TOKEN')
 
@@ -23,6 +24,7 @@ def send_welcome(message: types.Message):
     :param message:
     :return:
     """
+    log.do_log(message)
     db.create_table_if_not_exists(message, c, conn)
     bot.reply_to(message, """
     Привет! Это бот для поиска отелей!
@@ -41,6 +43,7 @@ def send_welcome(message: types.Message):
     :param message:
     :return:
     """
+    log.do_log(message)
     bot.reply_to(message, """
     Для управления мной есть такие команды:
     /lowprice - показать отели с самыми низкими ценами
@@ -60,6 +63,7 @@ def lowprice_start(message: types.Message):
     :param message:
     :return:
     """
+    log.do_log(message)
     db.insert_row(message, c, conn)
 
     mes = bot.send_message(message.chat.id, 'Куда едем, командир? ')
@@ -76,6 +80,7 @@ def highprice_start(message: types.Message):
     :param message:
     :return:
     """
+    log.do_log(message)
     db.insert_row(message, c, conn)
 
     mes = bot.send_message(message.chat.id, 'Куда едем, командир? ')
@@ -92,6 +97,7 @@ def bestdeal_start(message: types.Message):
     :param message:
     :return:
     """
+    log.do_log(message)
     db.insert_row(message, c, conn)
 
     mes = bot.send_message(message.chat.id, 'Куда едем, командир? ')
@@ -106,6 +112,7 @@ def bestdeal_start(message: types.Message):
     :param message:
     :return:
     """
+    log.do_log(message)
     history_table = db.fetch_all_db(message, c)
     history = commands.form_history(history_table)
     bot.send_message(message.chat.id, 'Ваша история запросов: ')
@@ -119,9 +126,11 @@ def where_we_going(message: types.Message):
     :param message:
     :return:
     """
+
     db.update_db(message, 'city', c, conn)
 
     mes = bot.send_message(message.chat.id, 'Сколько отелей нужно вывести в поиске? ')
+    log.do_log(message)
     bot.register_next_step_handler(mes, how_many_hotels)
 
 
@@ -133,6 +142,7 @@ def how_many_hotels(message: types.Message):
     :param message:
     :return:
     """
+
     db.update_db(message, 'hotels_count', c, conn)
     text = "Выберите дату заезда"
     bot.send_message(message.from_user.id, text)
@@ -164,9 +174,10 @@ def cal(call: types.CallbackQuery) -> None:
                               call.message.chat.id,
                               call.message.message_id)
         call.message.text = str(result)
+
         db.update_db(call.message, 'check_in', c, conn)
         # bot.send_message(call.message.chat.id, call.message.text)
-
+        log.do_log(call.message)
         set_check_in(call.message.chat.id)
 
 
@@ -207,6 +218,7 @@ def cal(call: types.CallbackQuery) -> None:
                               call.message.chat.id,
                               call.message.message_id)
         call.message.text = str(result)
+
         db.update_db(call.message, 'check_out', c, conn)
         # bot.register_next_step_handler(call.message, set_check_out)
 
@@ -219,7 +231,9 @@ def set_check_out(message: types.Message):
     :param message: сообщение от пользователя
     :return:
     """
+
     mes = bot.send_message(message.chat.id, 'Нужны ли фотографии? (да/нет) ')
+    log.do_log(message)
     bot.register_next_step_handler(mes, need_photos)
 
 
@@ -234,6 +248,7 @@ def need_photos(message: types.Message):
     :param message: сообщение от пользователя
     :return:
     """
+    log.do_log(message)
     if message.text.lower() == "да":
         mes = bot.send_message(message.chat.id, 'Сколько фотографий? ')
         bot.register_next_step_handler(mes, how_many_photos)
@@ -265,6 +280,7 @@ def how_many_photos(message: types.Message):
     :param message:
     :return:
     """
+    log.do_log(message)
     db.update_db(message, 'photos', c, conn)
     bot.send_message(message.chat.id, 'ОБРАБАТЫВАЮ...')
 
@@ -285,10 +301,11 @@ def how_many_photos(message: types.Message):
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message: types.Message):
     """
-    Вызывается если пользовательский текст не подпадает под комманды или ответы
+    Вызывается если пользовательский текст не подпадает под команды или ответы
     :param message:
     :return:
     """
+    log.do_log(message)
     if 'привет' in message.text.lower():
 
         bot.send_message(message.chat.id,
