@@ -6,14 +6,15 @@ from botrequests import commands
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 import datetime
 from telebot import types
-from logmodule import log
+from loguru import logger
+import pathlib
 
 TOKEN = config('TOKEN')
 
 bot = telebot.TeleBot(TOKEN)
 
-conn = db.connect_to_db('history.db')  # соединение с базой данных
-c = conn.cursor()  # подключение курсора для управлениея базой данных
+connection = db.connect_to_db('data.db')  # соединение с базой данных
+cursor = connection.cursor()  # подключение курсора для управлениея базой данных
 
 
 @bot.message_handler(commands=['start'])
@@ -24,8 +25,14 @@ def send_welcome(message: types.Message):
     :param message:
     :return:
     """
-    log.do_log(message)
-    db.create_table_if_not_exists(message, c, conn)
+
+    log_path = pathlib.PurePath(f"logs/{str(message.chat.id)}.log")
+    logger.add(log_path, format="{time} {level} {message}")
+
+    logger.info(f"{message.text}")
+    # db.drop_table(message, cursor, connection)
+    # connection.close()
+    db.create_table_if_not_exists(message, cursor, connection)
     bot.reply_to(message, """
     Привет! Это бот для поиска отелей!
     Для управления мной есть такие команды:
@@ -43,7 +50,7 @@ def send_welcome(message: types.Message):
     :param message:
     :return:
     """
-    log.do_log(message)
+    logger.info(f"{message.text}")
     bot.reply_to(message, """
     Для управления мной есть такие команды:
     /lowprice - показать отели с самыми низкими ценами
@@ -63,8 +70,8 @@ def lowprice_start(message: types.Message):
     :param message:
     :return:
     """
-    log.do_log(message)
-    db.insert_row(message, c, conn)
+    logger.info(f"{message.text}")
+    db.insert_row(message, cursor, connection)
 
     mes = bot.send_message(message.chat.id, 'Куда едем, командир? ')
     bot.register_next_step_handler(mes, where_we_going)
@@ -80,8 +87,8 @@ def highprice_start(message: types.Message):
     :param message:
     :return:
     """
-    log.do_log(message)
-    db.insert_row(message, c, conn)
+    logger.info(f"{message.text}")
+    db.insert_row(message, cursor, connection)
 
     mes = bot.send_message(message.chat.id, 'Куда едем, командир? ')
     bot.register_next_step_handler(mes, where_we_going)
@@ -97,8 +104,8 @@ def bestdeal_start(message: types.Message):
     :param message:
     :return:
     """
-    log.do_log(message)
-    db.insert_row(message, c, conn)
+    logger.info(f"{message.text}")
+    db.insert_row(message, cursor, connection)
 
     mes = bot.send_message(message.chat.id, 'Куда едем, командир? ')
     bot.register_next_step_handler(mes, where_we_going)
@@ -112,8 +119,8 @@ def bestdeal_start(message: types.Message):
     :param message:
     :return:
     """
-    log.do_log(message)
-    history_table = db.fetch_all_db(message, c)
+    logger.info(f"{message.text}")
+    history_table = db.fetch_all_db(message, cursor)
     history = commands.form_history(history_table)
     bot.send_message(message.chat.id, 'Ваша история запросов: ')
     bot.send_message(message.chat.id, history)
@@ -127,10 +134,10 @@ def where_we_going(message: types.Message):
     :return:
     """
 
-    db.update_db(message, 'city', c, conn)
+    db.update_db(message, 'city', cursor, connection)
 
     mes = bot.send_message(message.chat.id, 'Сколько отелей нужно вывести в поиске? ')
-    log.do_log(message)
+    logger.info(f"{message.text}")
     bot.register_next_step_handler(mes, how_many_hotels)
 
 
@@ -143,7 +150,7 @@ def how_many_hotels(message: types.Message):
     :return:
     """
 
-    db.update_db(message, 'hotels_count', c, conn)
+    db.update_db(message, 'hotels_count', cursor, connection)
     text = "Выберите дату заезда"
     bot.send_message(message.from_user.id, text)
     date = datetime.date.today()
@@ -175,9 +182,9 @@ def cal(call: types.CallbackQuery) -> None:
                               call.message.message_id)
         call.message.text = str(result)
 
-        db.update_db(call.message, 'check_in', c, conn)
+        db.update_db(call.message, 'check_in', cursor, connection)
         # bot.send_message(call.message.chat.id, call.message.text)
-        log.do_log(call.message)
+        logger.info(f"{call.message.text}")
         set_check_in(call.message.chat.id)
 
 
@@ -219,7 +226,7 @@ def cal(call: types.CallbackQuery) -> None:
                               call.message.message_id)
         call.message.text = str(result)
 
-        db.update_db(call.message, 'check_out', c, conn)
+        db.update_db(call.message, 'check_out', cursor, connection)
         # bot.register_next_step_handler(call.message, set_check_out)
 
         set_check_out(call.message)
@@ -231,9 +238,45 @@ def set_check_out(message: types.Message):
     :param message: сообщение от пользователя
     :return:
     """
+    work_row = db.fetch_db(message, cursor)
+    if work_row[0] == "/bestdeal":
+        mes = bot.send_message(message.chat.id, 'Минимальная цена в долларах: ')
+        logger.info(f"{message.text}")
+        bot.register_next_step_handler(mes, min_price)
 
+    else:
+        mes = bot.send_message(message.chat.id, 'Нужны ли фотографии? (да/нет) ')
+        logger.info(f"{message.text}")
+
+        bot.register_next_step_handler(mes, need_photos)
+
+
+def min_price(message: types.Message):
+    db.update_db(message, 'min_price', cursor, connection)
+    mes = bot.send_message(message.chat.id, 'Максимальная цена в долларах:  ')
+    logger.info(f"{message.text}")
+    bot.register_next_step_handler(mes, max_price)
+
+
+def max_price(message: types.Message):
+    db.update_db(message, 'max_price', cursor, connection)
+    mes = bot.send_message(message.chat.id, 'Минимальное расстояние в километрах до центра:  ')
+    logger.info(f"{message.text}")
+    bot.register_next_step_handler(mes, min_distance)
+
+
+def min_distance(message: types.Message):
+    db.update_db(message, 'min_distance', cursor, connection)
+    mes = bot.send_message(message.chat.id, 'Максимальное расстояние в километрах до центра:  ')
+    logger.info(f"{message.text}")
+    bot.register_next_step_handler(mes, max_distance)
+
+
+def max_distance(message: types.Message):
+    db.update_db(message, 'max_distance', cursor, connection)
     mes = bot.send_message(message.chat.id, 'Нужны ли фотографии? (да/нет) ')
-    log.do_log(message)
+    logger.info(f"{message.text}")
+
     bot.register_next_step_handler(mes, need_photos)
 
 
@@ -248,7 +291,7 @@ def need_photos(message: types.Message):
     :param message: сообщение от пользователя
     :return:
     """
-    log.do_log(message)
+    logger.info(f"{message.text}")
     if message.text.lower() == "да":
         mes = bot.send_message(message.chat.id, 'Сколько фотографий? ')
         bot.register_next_step_handler(mes, how_many_photos)
@@ -256,18 +299,31 @@ def need_photos(message: types.Message):
 
 
     else:
-        db.update_db(message, 'photos', c, conn)
+        db.update_db(message, 'photos', cursor, connection)
 
         bot.send_message(message.chat.id, 'ОБРАБАТЫВАЮ...')
 
-        work_row = db.fetch_db(message, c)
-
-        bot.send_message(message.chat.id, 'ПОДОЖДИТЕ...')
-        dest_id = commands.get_destination_id(work_row[1])
-        current_hotels_list = commands.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
-        for hotel in current_hotels_list:
-            info_about_hotel = commands.form_result_string(hotel)
-            bot.send_message(message.chat.id, info_about_hotel)
+        work_row = db.fetch_db(message, cursor)
+        if work_row[0] == "/bestdeal":
+            bot.send_message(message.chat.id, 'ПОДОЖДИТЕ...')
+            dest_id = commands.get_destination_id(work_row[1])
+            current_hotels_list = commands.hotels_list_bestdeal(dest_id, work_row[2], work_row[3], work_row[4], work_row[0], work_row[6],work_row[7],work_row[8],work_row[9])
+            if current_hotels_list:
+                for hotel in current_hotels_list:
+                    info_about_hotel = commands.form_result_string(hotel)
+                    bot.send_message(message.chat.id, info_about_hotel)
+            else:
+                bot.send_message(message.chat.id, "К сожалению отелей не найдено")
+        else:
+            bot.send_message(message.chat.id, 'ПОДОЖДИТЕ...')
+            dest_id = commands.get_destination_id(work_row[1])
+            current_hotels_list = commands.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
+            if current_hotels_list:
+                for hotel in current_hotels_list:
+                    info_about_hotel = commands.form_result_string(hotel)
+                    bot.send_message(message.chat.id, info_about_hotel)
+            else:
+                bot.send_message(message.chat.id, "К сожалению отелей не найдено")
 
 
 def how_many_photos(message: types.Message):
@@ -280,22 +336,41 @@ def how_many_photos(message: types.Message):
     :param message:
     :return:
     """
-    log.do_log(message)
-    db.update_db(message, 'photos', c, conn)
+    logger.info(f"{message.text}")
+    db.update_db(message, 'photos', cursor, connection)
     bot.send_message(message.chat.id, 'ОБРАБАТЫВАЮ...')
 
-    work_row = db.fetch_db(message, c)
+    work_row = db.fetch_db(message, cursor)
+    if work_row[0] == "/bestdeal":
+        bot.send_message(message.chat.id, 'ИЩУ ФОТО...')
+        dest_id = commands.get_destination_id(work_row[1])
+        current_hotels_list = commands.hotels_list_bestdeal(dest_id, work_row[2], work_row[3], work_row[4], work_row[0],
+                                                            work_row[6], work_row[7], work_row[8], work_row[9])
+        if current_hotels_list:
+            for hotel in current_hotels_list:
+                info_about_hotel = commands.form_result_string(hotel)
+                current_photos_list = commands.get_photos(hotel['id'])
+                current_photos_list = [x.format(size='b') for x in current_photos_list]
+                media_array = [InputMediaPhoto(x) for x in current_photos_list[:int(message.text)]]
+                media_array[0].caption = info_about_hotel
+                bot.send_media_group(message.chat.id, media_array)
+        else:
+            bot.send_message(message.chat.id, "К сожалению отелей не найдено")
+    else:
+        bot.send_message(message.chat.id, 'ИЩУ ФОТО...')
+        dest_id = commands.get_destination_id(work_row[1])
+        current_hotels_list = commands.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
 
-    bot.send_message(message.chat.id, 'ИЩУ ФОТО...')
-    dest_id = commands.get_destination_id(work_row[1])
-    current_hotels_list = commands.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
-    for hotel in current_hotels_list:
-        info_about_hotel = commands.form_result_string(hotel)
-        current_photos_list = commands.get_photos(hotel['id'])
-        current_photos_list = [x.format(size='b') for x in current_photos_list]
-        media_array = [InputMediaPhoto(x) for x in current_photos_list[:int(message.text)]]
-        media_array[0].caption = info_about_hotel
-        bot.send_media_group(message.chat.id, media_array)
+        if current_hotels_list:
+            for hotel in current_hotels_list:
+                info_about_hotel = commands.form_result_string(hotel)
+                current_photos_list = commands.get_photos(hotel['id'])
+                current_photos_list = [x.format(size='b') for x in current_photos_list]
+                media_array = [InputMediaPhoto(x) for x in current_photos_list[:int(message.text)]]
+                media_array[0].caption = info_about_hotel
+                bot.send_media_group(message.chat.id, media_array)
+        else:
+            bot.send_message(message.chat.id, "К сожалению отелей не найдено")
 
 
 @bot.message_handler(content_types=['text'])
@@ -305,7 +380,7 @@ def get_text_messages(message: types.Message):
     :param message:
     :return:
     """
-    log.do_log(message)
+    logger.info(f"{message.text}")
     if 'привет' in message.text.lower():
 
         bot.send_message(message.chat.id,
