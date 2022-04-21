@@ -28,9 +28,25 @@ def create_table_if_not_exists(value, cursor, connection):
     connection.commit()
 
 
+def create_table_history_if_not_exists(value, cursor, connection):
+    user = 'user' + str(value.chat.id) + 'history'
+    cursor.execute(f"""CREATE TABLE IF NOT EXISTS {user} (
+        command text, 
+        time text,
+        hotel_name text
+        )""")
+    connection.commit()
+
+
 def insert_row(value, cursor, connection):
     user = 'user' + str(value.chat.id)
     cursor.execute(f"INSERT INTO {user} VALUES ('{value.text}', '*', '*', '*', '*', '*', '*', '*', '*', '*')")
+    connection.commit()
+
+
+def insert_history_row(value, command, time, hotel_name, cursor, connection):
+    user = 'user' + str(value.chat.id) + 'history'
+    cursor.execute(f"INSERT INTO {user} VALUES ('{command}', '{str(time)}', '{hotel_name}')")
     connection.commit()
 
 
@@ -49,8 +65,14 @@ def fetch_db(value, cursor):
     return work_row
 
 
-def fetch_all_db(value, cursor):
-    user = 'user' + str(value.chat.id)
-    cursor.execute(f"SELECT * FROM {user}")
-    table = cursor.fetchall()
-    return table
+def fetch_all_db(value, cursor, is_history=False):
+    if is_history:
+        user = 'user' + str(value.chat.id) + 'history'
+        cursor.execute(f"SELECT * FROM {user}")
+        table = cursor.fetchall()
+        return table
+    else:
+        user = 'user' + str(value.chat.id)
+        cursor.execute(f"SELECT * FROM {user}")
+        table = cursor.fetchall()
+        return table
