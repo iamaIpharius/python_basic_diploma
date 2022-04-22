@@ -16,6 +16,8 @@ bot = telebot.TeleBot(TOKEN)
 
 connection = db.connect_to_db('data.db')  # соединение с базой данных
 cursor = connection.cursor()  # подключение курсора для управлениея базой данных
+log_path = pathlib.PurePath(f"logs/main_log.log")
+logger.add(log_path, format="{time} {level} {message}", level="INFO")
 
 
 @bot.message_handler(commands=['start'])
@@ -26,9 +28,6 @@ def send_welcome(message: types.Message):
     :param message:
     :return:
     """
-
-    log_path = pathlib.PurePath(f"logs/{str(message.chat.id)}.log")
-    logger.add(log_path, format="{time} {level} {message}", level="INFO")
 
     logger.info(f"chat id {message.chat.id} message text {message.text}")
     # db.drop_table(message, cursor, connection)
@@ -52,8 +51,7 @@ def send_welcome(message: types.Message):
     :param message:
     :return:
     """
-    log_path = pathlib.PurePath(f"logs/{str(message.chat.id)}.log")
-    logger.add(log_path, format="{time} {level} {message}", level="INFO")
+
     logger.info(f"chat id {message.chat.id} message text {message.text}")
     bot.reply_to(message, """
     Для управления мной есть такие команды:
@@ -74,8 +72,7 @@ def lowprice_start(message: types.Message):
     :param message:
     :return:
     """
-    log_path = pathlib.PurePath(f"logs/{str(message.chat.id)}.log")
-    logger.add(log_path, format="{time} {level} {message}", level="INFO")
+
     logger.info(f"chat id {message.chat.id} message text {message.text}")
     db.insert_row(message, cursor, connection)
 
@@ -93,8 +90,7 @@ def highprice_start(message: types.Message):
     :param message:
     :return:
     """
-    log_path = pathlib.PurePath(f"logs/{str(message.chat.id)}.log")
-    logger.add(log_path, format="{time} {level} {message}", level="INFO")
+
     logger.info(f"chat id {message.chat.id} message text {message.text}")
     db.insert_row(message, cursor, connection)
 
@@ -112,8 +108,7 @@ def bestdeal_start(message: types.Message):
     :param message:
     :return:
     """
-    log_path = pathlib.PurePath(f"logs/{str(message.chat.id)}.log")
-    logger.add(log_path, format="{time} {level} {message}", level="INFO")
+
     logger.info(f"chat id {message.chat.id} message text {message.text}")
     db.insert_row(message, cursor, connection)
 
@@ -129,8 +124,7 @@ def bestdeal_start(message: types.Message):
     :param message:
     :return:
     """
-    log_path = pathlib.PurePath(f"logs/{str(message.chat.id)}.log")
-    logger.add(log_path, format="{time} {level} {message}", level="INFO")
+
     logger.info(f"chat id {message.chat.id} message text {message.text}")
 
     history_table = db.fetch_all_db(message, cursor, True)
@@ -329,7 +323,8 @@ def need_photos(message: types.Message):
             if current_hotels_list:
                 for hotel in current_hotels_list:
                     current_time = datetime.datetime.now()
-                    db.insert_history_row(message, work_row[0], current_time.strftime("%d-%m-%Y %H:%M"), hotel['name'], cursor,
+                    db.insert_history_row(message, work_row[0], current_time.strftime("%d-%m-%Y %H:%M"), hotel['name'],
+                                          cursor,
                                           connection)
 
                     info_about_hotel = commands.form_result_string(hotel)
@@ -343,7 +338,8 @@ def need_photos(message: types.Message):
             if current_hotels_list:
                 for hotel in current_hotels_list:
                     current_time = datetime.datetime.now()
-                    db.insert_history_row(message, work_row[0], current_time.strftime("%d-%m-%Y %H:%M"), hotel['name'], cursor,
+                    db.insert_history_row(message, work_row[0], current_time.strftime("%d-%m-%Y %H:%M"), hotel['name'],
+                                          cursor,
                                           connection)
 
                     info_about_hotel = commands.form_result_string(hotel)
@@ -369,9 +365,6 @@ def how_many_photos(message: types.Message):
 
     work_row = db.fetch_db(message, cursor)
 
-    log_path_history = pathlib.PurePath(f"logs/{str(message.chat.id)}_history.log")
-    logger.add(log_path_history, format="{time} {message}")
-
     if work_row[0] == "/bestdeal":
         bot.send_message(message.chat.id, 'ИЩУ ФОТО...')
         dest_id = commands.get_destination_id(work_row[1])
@@ -380,7 +373,8 @@ def how_many_photos(message: types.Message):
         if current_hotels_list:
             for hotel in current_hotels_list:
                 current_time = datetime.datetime.now()
-                db.insert_history_row(message, work_row[0], current_time.strftime("%d-%m-%Y %H:%M"), hotel['name'], cursor,
+                db.insert_history_row(message, work_row[0], current_time.strftime("%d-%m-%Y %H:%M"), hotel['name'],
+                                      cursor,
                                       connection)
 
                 info_about_hotel = commands.form_result_string(hotel)
@@ -399,7 +393,8 @@ def how_many_photos(message: types.Message):
         if current_hotels_list:
             for hotel in current_hotels_list:
                 current_time = datetime.datetime.now()
-                db.insert_history_row(message, work_row[0], current_time.strftime("%d-%m-%Y %H:%M"), hotel['name'], cursor,
+                db.insert_history_row(message, work_row[0], current_time.strftime("%d-%m-%Y %H:%M"), hotel['name'],
+                                      cursor,
                                       connection)
                 info_about_hotel = commands.form_result_string(hotel)
                 current_photos_list = commands.get_photos(hotel['id'])
@@ -418,8 +413,7 @@ def get_text_messages(message: types.Message):
     :param message:
     :return:
     """
-    log_path = pathlib.PurePath(f"logs/{str(message.chat.id)}.log")
-    logger.add(log_path, format="{time} {level} {message}", level="INFO")
+
     logger.info(f"chat id {message.chat.id} message text {message.text}")
     if 'привет' in message.text.lower():
 

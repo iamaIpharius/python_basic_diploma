@@ -15,7 +15,6 @@ def get_clean_list(hotels, min_d, max_d):
 
         if float(min_d) < float_hotel_landmark < float(max_d):
             result_list.append(hotel)
-    print(result_list)
     return result_list
 
 
