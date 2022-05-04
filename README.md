@@ -1,13 +1,15 @@
 # Телеграм-бот для подбора отелей и хостелов
-———
+
 ## Структура бота
 
+##### **Сожержание Main.py**
+---
 **TOKEN** - Ваш токен бота
 
-**connection = db.connect_to_db('data.db')** -  соединение с базой данных
-**cursor = connection.cursor()** -  подключение курсора для управлениея базой данных
-**log_path = pathlib.PurePath(f"logs/main_log.log")** - создание пути для формирования лога
-**logger.add(log_path, format="{time} {level} {message}", level="INFO")** - подключение логгера
+* **connection = db.connect_to_db('data.db')** -  соединение с базой данных
+* **cursor = connection.cursor()** -  подключение курсора для управлениея базой данных
+* **log_path = pathlib.PurePath(f"logs/main_log.log")** - создание пути для формирования лога
+* **logger.add(log_path, format="{time} {level} {message}", level="INFO")** - подключение логгера
 
 
 ### В завистимости от входящего сообщения вызывается одна из стартовых функций:
@@ -83,7 +85,104 @@
 
 
 * get_text_messages(message: types.Message): - Отвечает на любой другой текст кроме комманд
-———
+
+##### **Модуль Database**
+---
+**Используется SQLite3**
+
+* connect_to_db: Функция для соединения с базой данных
+
+        def connect_to_db(db):
+            return sqlite3.connect(db, check_same_thread=False)
+
+* drop_table: Функция для удаления таблицы
+
+        def drop_table(value, cursor, connection):
+            user = 'user' + str(value.chat.id)
+            cursor.execute(f"DROP TABLE {user}")
+            connection.commit()
+
+* create_table_if_not_exists: Создание таблицы пользователя в базе данных
+
+        def create_table_if_not_exists(value, cursor, connection):
+            user = 'user' + str(value.chat.id)
+            cursor.execute(f"""CREATE TABLE IF NOT EXISTS {user} (
+                command text, 
+                city text,
+                hotels_count text,
+                check_in text,
+                check_out text,
+                photos text,
+                min_price text,
+                max_price text,
+                min_distance text,
+                max_distance text
+                )""")
+            connection.commit()
+
+* create_table_history_if_not_exists: Создание таблицы истории пользователя в базе данных
+
+        def create_table_history_if_not_exists(value, cursor, connection):
+            user = 'user' + str(value.chat.id) + 'history'
+            cursor.execute(f"""CREATE TABLE IF NOT EXISTS {user} (
+                command text, 
+                time text,
+                hotel_name text
+                )""")
+            connection.commit()
+
+* insert_row: Добавить строку в таблицу. Строка соответствует новому запросу
+
+        def insert_row(value, cursor, connection):
+            user = 'user' + str(value.chat.id)
+            cursor.execute(f"INSERT INTO {user} VALUES ('{value.text}', '*', '*', '*', '*', '*', '*', '*', '*', '*')")
+            connection.commit()
+
+* insert_history_row: Добавить строку в таблицу истории. Строка соответствует каждому полученному отелю
+
+        def insert_history_row(value, command, time, hotel_name, cursor, connection):
+            user = 'user' + str(value.chat.id) + 'history'
+            cursor.execute(f"INSERT INTO {user} VALUES ('{command}', '{str(time)}', '{hotel_name}')")
+            connection.commit()
+
+* update_db: Обновить таблицу, добавив новые данные
+
+        def update_db(value, column, cursor, connection):
+            user = 'user' + str(value.chat.id)
+            cursor.execute(
+                f"""UPDATE {user} SET {column} = "{str(value.text)}" 
+                WHERE rowid = (SELECT MAX(rowid) FROM {user})""")
+            connection.commit()
+
+* fetch_db: Выгрузить из таблицы последнюю строку
+
+        def fetch_db(value, cursor):
+            user = 'user' + str(value.chat.id)
+            cursor.execute(f"SELECT * FROM {user}")
+            table = cursor.fetchall()
+            work_row = table[-1]
+            return work_row
+
+* fetch_all_db: Выгрузить всю таблицу. Если нужно выгрузить всю таблицу из истории - устанавливаея флаг True. Иначе выгружается вся таблица для работы с отелями.
+
+        def fetch_all_db(value, cursor, is_history=False):
+            if is_history:
+                user = 'user' + str(value.chat.id) + 'history'
+                cursor.execute(f"SELECT * FROM {user}")
+                table = cursor.fetchall()
+                return table
+            else:
+                user = 'user' + str(value.chat.id)
+                cursor.execute(f"SELECT * FROM {user}")
+                table = cursor.fetchall()
+                return table
+
+##### **Модуль Commands**
+---
+
+
+
+
 ## Использование бота в Телеграмм
 ### Команды
 1. **/start** - запуск бота, возвращает смайлик
