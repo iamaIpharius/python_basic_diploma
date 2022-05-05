@@ -45,7 +45,7 @@ def send_welcome(message: types.Message):
 
 
 @bot.message_handler(commands=['help'])
-def send_welcome(message: types.Message):
+def respond_to_help(message: types.Message):
     """
     Ответ на команду help с перечнем команд для управления ботом
     :param message:
@@ -117,7 +117,7 @@ def bestdeal_start(message: types.Message):
 
 
 @bot.message_handler(commands=['history'])
-def bestdeal_start(message: types.Message):
+def get_history(message: types.Message):
     """
     Из базы данных выгружается сырая информация в переменную history_table и затем с помощью функции form_history
     обрабатывается и затем из таблицы выводится история запросов (строк)
