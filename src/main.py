@@ -24,9 +24,8 @@ logger.add(log_path, format="{time} {level} {message}", level="INFO")
 def send_welcome(message: types.Message):
     """
     Приветственное сообщение, ответ на команду start
-    Создается таблица базы данных
-    :param message:
-    :return:
+    Создается таблица базы данных и таблица с историей
+    :param message: сообщение пользователя
     """
 
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -48,8 +47,7 @@ def send_welcome(message: types.Message):
 def respond_to_help(message: types.Message):
     """
     Ответ на команду help с перечнем команд для управления ботом
-    :param message:
-    :return:
+    :param message: сообщение пользователя
     """
 
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -69,8 +67,7 @@ def lowprice_start(message: types.Message):
     в таблицу базы данных добавляется новая строка строка (весь запрос), которая будет дополняться
 
     бут задает вопрос и ответ пользователя передается в следующую по цепочке функцию и там регистрируется
-    :param message:
-    :return:
+    :param message: сообщение пользователя
     """
 
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -87,8 +84,7 @@ def highprice_start(message: types.Message):
     в таблицу базы данных добавляется новая строка строка (весь запрос), которая будет дополняться
 
     бут задает вопрос и ответ пользователя передается в следующую по цепочке функцию и там регистрируется
-    :param message:
-    :return:
+    :param message: сообщение пользователя
     """
 
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -105,8 +101,7 @@ def bestdeal_start(message: types.Message):
     в таблицу базы данных добавляется новая строка строка (весь запрос), которая будет дополняться
 
     бут задает вопрос и ответ пользователя передается в следующую по цепочке функцию и там регистрируется
-    :param message:
-    :return:
+    :param message: сообщение пользователя
     """
 
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -119,10 +114,9 @@ def bestdeal_start(message: types.Message):
 @bot.message_handler(commands=['history'])
 def get_history(message: types.Message):
     """
-    Из базы данных выгружается сырая информация в переменную history_table и затем с помощью функции form_history
-    обрабатывается и затем из таблицы выводится история запросов (строк)
-    :param message:
-    :return:
+    Из базы данных истории выгружается информация в переменную history_table, с помощью цикла преобразуется в итоговую строку и направляется
+    пользователю
+    :param message: сообщение пользователя
     """
 
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -143,8 +137,7 @@ def where_we_going(message: types.Message):
     """
     второй шаг в цепочке, сюда поступает информация о городе назначения и добавляется в строку таблицы
     Далее пользователю предлагают ответить на следующий вопрос и вызывается следующая по цепочке функция
-    :param message:
-    :return:
+    :param message: сообщение пользователя
     """
 
     db.update_db(message, 'city', cursor, connection)
@@ -159,8 +152,7 @@ def how_many_hotels(message: types.Message):
     Следующий шаг, сбда поступает информация о количестве отелей, которые нужно вывести, и добавляется в строку таблицы.
     Далее задействуется модуль Календарь,  функция вызова даты въезда
 
-    :param message:
-    :return:
+    :param message: сообщение пользователя
     """
     logger.info(f"chat id {message.chat.id} message text {message.text}")
     db.update_db(message, 'hotels_count', cursor, connection)
@@ -180,7 +172,6 @@ def cal(call: types.CallbackQuery) -> None:
     передает ответ в БД,
     и переходит к следующему шагу
     :param call:запрос обраатного вызова с сообщением
-    :return:
     """
     date = datetime.date.today()
     result, key, step = DetailedTelegramCalendar(calendar_id=1, locale='ru', min_date=date).process(call.data)
@@ -204,7 +195,6 @@ def set_check_in(chat_id: int) -> None:
     """
     Функция вызова даты выезда
     :param chat_id: ID чата
-    :return:
     """
     date_today = datetime.date.today()
     text = "Выберите дату выезда"
@@ -243,9 +233,10 @@ def cal(call: types.CallbackQuery) -> None:
 
 def set_check_out(message: types.Message):
     """
-    Регистрируется следующий шаг в зависимости от ответа пользователя
-    :param message: сообщение от пользователя
-    :return:
+    Регистрируется следующий шаг в зависимости от ответа пользователя, если изеачальный запрос bestdeal - запускается ответвление чтобы получить 
+    данные о минимальной максимальной цене и расстоянии до центра
+    В дургом случае следующий шаг это нужны ли фотографии отелей или нет
+    :param message: сообщение от пользователя, минимальная цена либо ответ на Нужны ли фотографии
     """
     work_row = db.fetch_db(message, cursor)
     if work_row[0] == "/bestdeal":
@@ -261,6 +252,12 @@ def set_check_out(message: types.Message):
 
 
 def min_price(message: types.Message):
+    """
+    Сохраняется ифнормация о минимальной цене
+    Регистрируется следующий шаг в зависимости от ответа пользователя
+    :param message: сообщение от пользователя о максимальной цене
+    """
+
     db.update_db(message, 'min_price', cursor, connection)
     mes = bot.send_message(message.chat.id, 'Максимальная цена в долларах:  ')
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -268,6 +265,12 @@ def min_price(message: types.Message):
 
 
 def max_price(message: types.Message):
+    """
+    Сохраняется ифнормация о максимальной цене
+    Регистрируется следующий шаг в зависимости от ответа пользователя
+    :param message: сообщение от пользователя о минимальном расстоянии до центра
+    """
+
     db.update_db(message, 'max_price', cursor, connection)
     mes = bot.send_message(message.chat.id, 'Минимальное расстояние в километрах до центра:  ')
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -275,6 +278,11 @@ def max_price(message: types.Message):
 
 
 def min_distance(message: types.Message):
+    """
+    Сохраняется ифнормация о минимальном расстоянии до центра
+    Регистрируется следующий шаг в зависимости от ответа пользователя
+    :param message: сообщение от пользователя о максимальном расстоянии до центра
+    """
     db.update_db(message, 'min_distance', cursor, connection)
     mes = bot.send_message(message.chat.id, 'Максимальное расстояние в километрах до центра:  ')
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -282,6 +290,11 @@ def min_distance(message: types.Message):
 
 
 def max_distance(message: types.Message):
+    """
+    Сохраняется ифнормация о максимальном расстоянии до центра
+    Регистрируется следующий шаг в зависимости от ответа пользователя
+    :param message: сообщение от пользователя о том, нужны ли фотографии
+    """
     db.update_db(message, 'max_distance', cursor, connection)
     mes = bot.send_message(message.chat.id, 'Нужны ли фотографии? (да/нет) ')
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -298,7 +311,6 @@ def need_photos(message: types.Message):
     параметры для запроса в API и формирования итогового списка отелей
     Отели из списка по очереди направляются пользователю
     :param message: сообщение от пользователя
-    :return:
     """
 
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -355,8 +367,7 @@ def how_many_photos(message: types.Message):
     строка бд обновляется и из строки базы данных формируется work_row, из которой в свою очередь извлекаются
     параметры для запроса в API и формирования итогового списка отелей
     Отели из списка по очереди направляются пользователю
-    :param message:
-    :return:
+    :param message: сообщение от пользователя
     """
 
     logger.info(f"chat id {message.chat.id} message text {message.text}")
@@ -410,8 +421,7 @@ def how_many_photos(message: types.Message):
 def get_text_messages(message: types.Message):
     """
     Вызывается если пользовательский текст не подпадает под команды или ответы
-    :param message:
-    :return:
+    :param message: сообщение от пользователя
     """
 
     logger.info(f"chat id {message.chat.id} message text {message.text}")
