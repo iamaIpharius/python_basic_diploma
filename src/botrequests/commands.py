@@ -5,7 +5,14 @@ from decouple import config
 api_key = config("api_key")
 
 
-def get_clean_list(hotels, min_d, max_d):
+def get_clean_list(hotels: list, min_d: int, max_d: int) -> list:
+    """
+    Используется для работы с bestdeal, фильтрует отели по параметру расстояния до цетнтра
+    :param hotels: список отелей
+    :param min_d: минимальное расстояние до центра
+    :param max_d: максимальное расстояние до центра
+    :return: отфильтрованный список
+    """
     result_list = []
 
     for hotel in hotels:
@@ -18,11 +25,12 @@ def get_clean_list(hotels, min_d, max_d):
     return result_list
 
 
-# def best_deal_sort(hotel):
-#     return hotel['ratePlan']['price']['exactCurrent']
-
-
-def get_destination_id(destination):
+def get_destination_id(destination: str) -> str:
+    """
+    Получение ID города поиска
+    :param destination: город поиска
+    :return: ID города
+    """
     url = "https://hotels4.p.rapidapi.com/locations/search"
 
     querystring = {"query": str(destination), "locale": "ru_RU"}
@@ -37,8 +45,17 @@ def get_destination_id(destination):
     return result['suggestions'][0]['entities'][0]['destinationId']
 
 
-def hotels_list_by(destination, hotels_count, checkIn, checkOut, sort_by):
-    hotels_to_result = int(hotels_count)
+def hotels_list_by(destination: str, hotels_count: int, checkIn: str, checkOut: str, sort_by: str) -> list:
+    """
+    Формируется список отелей по зданным параметрам, для комманд lowprice, highprice
+    :param destination: ID города
+    :param hotels_count: сколько отелей вывести
+    :param checkIn: дата заезда
+    :param checkOut: дата выезда
+    :param sort_by: сортировка, высокая или низкая цена, зависит от изначальной комманды
+    :return: список отелей
+    """
+
     if sort_by == "/lowprice":
         sort_by = "PRICE"
     elif sort_by == "/highprice":
@@ -63,9 +80,21 @@ def hotels_list_by(destination, hotels_count, checkIn, checkOut, sort_by):
     return hotels_list
 
 
-def hotels_list_bestdeal(destination, hotels_count, checkIn, checkOut,
-                         sort_by, min_price, max_price, min_distance, max_distance):
-    hotels_to_result = int(hotels_count)
+def hotels_list_bestdeal(destination: str, hotels_count: int, checkIn: str, checkOut: str,
+                         sort_by: str, min_price: int, max_price: int, min_distance: int, max_distance: int) -> list:
+    """
+    Формируется список отелей по зданным параметрам, для комманды bestdeal
+    :param destination: ID города
+    :param hotels_count: сколько отелей вывести
+    :param checkIn: дата заезда
+    :param checkOut: дата выезда
+    :param sort_by: сортировка, сортируется по низкой цене
+    :param min_price: минимальная цена
+    :param max_price: максимаольная цена
+    :param min_distance: мимнимальное расстояние до центра
+    :param max_distance: максимальное рассмтояние до центра
+    :return: список отелей
+    """
     if sort_by == "/bestdeal":
         sort_by = "PRICE"
 
@@ -87,15 +116,16 @@ def hotels_list_bestdeal(destination, hotels_count, checkIn, checkOut,
     hotels_list = result["data"]["body"]["searchResults"]["results"]
 
     new_list = get_clean_list(hotels_list, min_distance, max_distance)
-    # sorted_list = sorted(new_list, key=best_deal_sort)
-    # result = []
-    # for index in range(hotels_to_result):
-    #     result.append(sorted_list[index])
 
     return new_list
 
 
-def get_photos(hotel_id):
+def get_photos(hotel_id: str) -> list:
+    """
+    Получить список фотографий url
+    :param hotel_id: ID отеля
+    :return:
+    """
     url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
 
     querystring = {"id": str(hotel_id)}
@@ -111,7 +141,12 @@ def get_photos(hotel_id):
     return photos_list
 
 
-def form_result_string(hotel):
+def form_result_string(hotel: dict) -> str:
+    """
+    Формируется сообщение с результатом, которое направляется пользователю
+    :param hotel: Отель, словарь из списка отелей
+    :return: Итоговое сообщение, строка
+    """
     result = f"""
   Название отеля: {hotel['name']}
   Адрес: {hotel['address']['locality']}, {hotel['address']['streetAddress']}, {hotel['address']['postalCode']}
@@ -119,15 +154,4 @@ def form_result_string(hotel):
   Цена: {hotel['ratePlan']['price']['current']}
   Ссылка: https://ru.hotels.com/ho{hotel['id']}
   """
-    return result
-
-
-def form_history(history_list):
-    result = f"""
-          История запросов:\n
-          """
-    for item in history_list:
-        history_string = f"Тип: {item[0]} Город: {item[1]} Дата заезда: {item[3]} Дата выезда: {item[4]}\n"
-        result += history_string
-
     return result
