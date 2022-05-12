@@ -4,6 +4,11 @@ from decouple import config
 
 api_key = config("api_key")
 
+headers = {
+    'x-rapidapi-host': "hotels4.p.rapidapi.com",
+    'x-rapidapi-key': api_key
+}
+
 
 def get_clean_list(hotels: list, min_d: int, max_d: int) -> list:
     """
@@ -35,11 +40,6 @@ def get_destination_id(destination: str) -> str:
 
     querystring = {"query": str(destination), "locale": "ru_RU"}
 
-    headers = {
-        'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': api_key
-    }
-
     response = requests.request("GET", url, headers=headers, params=querystring)
     result = json.loads(response.text)
     return result['suggestions'][0]['entities'][0]['destinationId']
@@ -68,10 +68,6 @@ def hotels_list_by(destination: str, hotels_count: int, checkIn: str, checkOut: 
     querystring = {"destinationId": str(destination), "pageNumber": "1", "pageSize": str(hotels_count),
                    "checkIn": checkIn, "checkOut": checkOut, "adults1": "1", "sortOrder": sort_by, "locale": "ru_RU",
                    "currency": "USD"}
-    headers = {
-        'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': api_key
-    }
 
     response = requests.request("GET", url, headers=headers, params=querystring)
     result = json.loads(response.text)
@@ -106,10 +102,6 @@ def hotels_list_bestdeal(destination: str, hotels_count: int, checkIn: str, chec
                    "checkIn": checkIn, "checkOut": checkOut, "adults1": "1", "sortOrder": sort_by,
                    "priceMin": str(min_price), "priceMax": str(max_price), "locale": "ru_RU",
                    "currency": "USD"}
-    headers = {
-        'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': api_key
-    }
 
     response = requests.request("GET", url, headers=headers, params=querystring)
     result = json.loads(response.text)
@@ -129,11 +121,6 @@ def get_photos(hotel_id: str) -> list:
     url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
 
     querystring = {"id": str(hotel_id)}
-
-    headers = {
-        'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': api_key
-    }
 
     response = requests.request("GET", url, headers=headers, params=querystring)
     result = json.loads(response.text)
