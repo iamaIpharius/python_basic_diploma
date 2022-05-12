@@ -107,7 +107,7 @@ def insert_history_row(value, command, time, hotel_name, cursor, connection):
     :param connection: соединение с базой данных
     """
     user = 'user' + str(value.chat.id) + 'history'
-    cursor.execute(f"INSERT INTO {user} VALUES ('{command}', '{str(time)}', '{hotel_name}')")
+    cursor.execute(f"INSERT INTO {user} VALUES (?,?,?)", (command, str(time), hotel_name))
     connection.commit()
 
 
