@@ -7,7 +7,7 @@ from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 from telebot import types
 from loguru import logger
 from database import database as db
-from botrequests import commands
+from botrequests import botrequests
 
 TOKEN = config('TOKEN')
 
@@ -327,8 +327,8 @@ def need_photos(message: types.Message):
         work_row = db.fetch_db(message, cursor)
         if work_row[0] == "/bestdeal":
             bot.send_message(message.chat.id, 'ПОДОЖДИТЕ...')
-            dest_id = commands.get_destination_id(work_row[1])
-            current_hotels_list = commands.hotels_list_bestdeal(dest_id, work_row[2], work_row[3], work_row[4],
+            dest_id = botrequests.get_destination_id(work_row[1])
+            current_hotels_list = botrequests.hotels_list_bestdeal(dest_id, work_row[2], work_row[3], work_row[4],
                                                                 work_row[0], work_row[6], work_row[7], work_row[8],
                                                                 work_row[9])
             if current_hotels_list:
@@ -338,14 +338,14 @@ def need_photos(message: types.Message):
                                           cursor,
                                           connection)
 
-                    info_about_hotel = commands.form_result_string(hotel)
+                    info_about_hotel = botrequests.form_result_string(hotel)
                     bot.send_message(message.chat.id, info_about_hotel)
             else:
                 bot.send_message(message.chat.id, "К сожалению отелей не найдено")
         else:
             bot.send_message(message.chat.id, 'ПОДОЖДИТЕ...')
-            dest_id = commands.get_destination_id(work_row[1])
-            current_hotels_list = commands.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
+            dest_id = botrequests.get_destination_id(work_row[1])
+            current_hotels_list = botrequests.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
             if current_hotels_list:
                 for hotel in current_hotels_list:
                     current_time = datetime.datetime.now()
@@ -353,7 +353,7 @@ def need_photos(message: types.Message):
                                           cursor,
                                           connection)
 
-                    info_about_hotel = commands.form_result_string(hotel)
+                    info_about_hotel = botrequests.form_result_string(hotel)
                     bot.send_message(message.chat.id, info_about_hotel)
             else:
                 bot.send_message(message.chat.id, "К сожалению отелей не найдено")
@@ -377,8 +377,8 @@ def how_many_photos(message: types.Message):
 
     if work_row[0] == "/bestdeal":
         bot.send_message(message.chat.id, 'ИЩУ ФОТО...')
-        dest_id = commands.get_destination_id(work_row[1])
-        current_hotels_list = commands.hotels_list_bestdeal(dest_id, work_row[2], work_row[3], work_row[4], work_row[0],
+        dest_id = botrequests.get_destination_id(work_row[1])
+        current_hotels_list = botrequests.hotels_list_bestdeal(dest_id, work_row[2], work_row[3], work_row[4], work_row[0],
                                                             work_row[6], work_row[7], work_row[8], work_row[9])
         if current_hotels_list:
             for hotel in current_hotels_list:
@@ -387,8 +387,8 @@ def how_many_photos(message: types.Message):
                                       cursor,
                                       connection)
 
-                info_about_hotel = commands.form_result_string(hotel)
-                current_photos_list = commands.get_photos(hotel['id'])
+                info_about_hotel = botrequests.form_result_string(hotel)
+                current_photos_list = botrequests.get_photos(hotel['id'])
                 current_photos_list = [x.format(size='b') for x in current_photos_list]
                 media_array = [InputMediaPhoto(x) for x in current_photos_list[:int(message.text)]]
                 media_array[0].caption = info_about_hotel
@@ -397,8 +397,8 @@ def how_many_photos(message: types.Message):
             bot.send_message(message.chat.id, "К сожалению отелей не найдено")
     else:
         bot.send_message(message.chat.id, 'ИЩУ ФОТО...')
-        dest_id = commands.get_destination_id(work_row[1])
-        current_hotels_list = commands.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
+        dest_id = botrequests.get_destination_id(work_row[1])
+        current_hotels_list = botrequests.hotels_list_by(dest_id, work_row[2], work_row[3], work_row[4], work_row[0])
 
         if current_hotels_list:
             for hotel in current_hotels_list:
@@ -406,8 +406,8 @@ def how_many_photos(message: types.Message):
                 db.insert_history_row(message, work_row[0], current_time.strftime("%d-%m-%Y %H:%M"), hotel['name'],
                                       cursor,
                                       connection)
-                info_about_hotel = commands.form_result_string(hotel)
-                current_photos_list = commands.get_photos(hotel['id'])
+                info_about_hotel = botrequests.form_result_string(hotel)
+                current_photos_list = botrequests.get_photos(hotel['id'])
                 current_photos_list = [x.format(size='b') for x in current_photos_list]
                 media_array = [InputMediaPhoto(x) for x in current_photos_list[:int(message.text)]]
                 media_array[0].caption = info_about_hotel

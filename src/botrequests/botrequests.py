@@ -45,7 +45,7 @@ def get_destination_id(destination: str) -> str:
     return result['suggestions'][0]['entities'][0]['destinationId']
 
 
-def hotels_list_by(destination: str, hotels_count: int, checkIn: str, checkOut: str, sort_by: str) -> list:
+def hotels_list_by(destination: str, hotels_count: int, checkIn: str, checkOut: str, sort_by: str) -> list or bool:
     """
     Формируется список отелей по зданным параметрам, для комманд lowprice, highprice
     :param destination: ID города
@@ -71,9 +71,13 @@ def hotels_list_by(destination: str, hotels_count: int, checkIn: str, checkOut: 
 
     response = requests.request("GET", url, headers=headers, params=querystring)
     result = json.loads(response.text)
-    hotels_list = result["data"]["body"]["searchResults"]["results"]
+    try:
+        hotels_list = result["data"]["body"]["searchResults"]["results"]
+        return hotels_list
+    except KeyError:
+        return False
 
-    return hotels_list
+
 
 
 def hotels_list_bestdeal(destination: str, hotels_count: int, checkIn: str, checkOut: str,
