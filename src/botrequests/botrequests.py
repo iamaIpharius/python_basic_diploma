@@ -78,8 +78,6 @@ def hotels_list_by(destination: str, hotels_count: int, checkIn: str, checkOut: 
         return False
 
 
-
-
 def hotels_list_bestdeal(destination: str, hotels_count: int, checkIn: str, checkOut: str,
                          sort_by: str, min_price: int, max_price: int, min_distance: int, max_distance: int) -> list:
     """
@@ -140,7 +138,7 @@ def form_result_string(hotel: dict) -> str:
     """
     result = f"""
   Название отеля: {hotel['name']}
-  Адрес: {hotel['address']['locality']}, {hotel['address']['streetAddress']}, {hotel['address']['postalCode']}
+  Адрес: {hotel['address']['locality']}, {hotel['address'].get('streetAddress') if hotel['address'].get('streetAddress') else ''}, {hotel['address'].get('postalCode') if hotel['address'].get('postalCode') else ''} 
   Расстояние до {hotel['landmarks'][0]["label"]} - {hotel['landmarks'][0]["distance"]}
   Цена: {hotel['ratePlan']['price']['current']}
   Ссылка: https://ru.hotels.com/ho{hotel['id']}
