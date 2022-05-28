@@ -319,7 +319,7 @@ def need_photos(message: types.Message):
 
 
 
-    else:
+    elif message.text.lower() == "нет":
         db.update_db(message, 'photos', cursor, connection)
 
         bot.send_message(message.chat.id, 'ОБРАБАТЫВАЮ...')
@@ -357,6 +357,9 @@ def need_photos(message: types.Message):
                     bot.send_message(message.chat.id, info_about_hotel)
             else:
                 bot.send_message(message.chat.id, "К сожалению отелей не найдено")
+    else:
+        mes = bot.send_message(message.chat.id, 'Некорректный ввод! Попробуйте еще раз, нужны ли фотографии? (да/нет) ')
+        bot.register_next_step_handler(mes, need_photos)
 
 
 def how_many_photos(message: types.Message):
